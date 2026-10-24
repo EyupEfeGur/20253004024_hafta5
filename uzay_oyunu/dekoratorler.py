@@ -1,0 +1,61 @@
+# Ad : Eyüp Efe
+# Soyad : GÜR
+# Numara : 20253004024
+# Bölüm : Bilişim Sistemleri ve Teknolojileri
+
+# Dekoratör fonksiyonları ve süre/çağrı ölçümleri
+
+import functools
+import time
+
+
+def sure_olc(fonksiyon):
+    """Fonksiyonun çalışma süresini time.perf_counter() ile ölçüp ekrana yazdırır."""
+
+    @functools.wraps(fonksiyon)
+    def sarmalayici(*args, **kwargs):
+        # Başlangıç zamanını hassas sayaçla alıyoruz
+        baslangic = time.perf_counter()
+        sonuc = fonksiyon(*args, **kwargs)
+        bitis = time.perf_counter()
+        gecen_sure = bitis - baslangic
+        # İstenen "ad: 0.0123 sn" formatında yazdırıyoruz
+        print(f"{fonksiyon.__name__}: {gecen_sure:.4f} sn")
+        return sonuc
+
+    return sarmalayici
+
+
+if __name__ == "__main__":
+    # Hafta 4'teki önbelleksiz rota sayacına uygulayarak adim=20 için süreyi ölçüyoruz:
+    try:
+        from uzay_oyunu.galaksi import veri_yukle
+    except ModuleNotFoundError:
+        from galaksi import veri_yukle
+
+    galaksi = veri_yukle()
+    baglantilar = galaksi["baglantilar"]
+
+    def rota_sayaci_onbelleksiz(baglanti_haritasi: dict):
+        """Önbelleksiz özyinelemeli rota sayacı."""
+
+        def rota_sayisi(gezegen: str, adim: int) -> int:
+            if adim == 0:
+                return 1
+            komsular = baglanti_haritasi.get(gezegen, [])
+            if not komsular:
+                return 0
+            return sum(rota_sayisi(k, adim - 1) for k in komsular)
+
+        return rota_sayisi
+
+    onbelleksiz_sayac = rota_sayaci_onbelleksiz(baglantilar)
+
+    @sure_olc
+    def rota_hesapla(gezegen: str, adim: int) -> int:
+        """Belirtilen gezegen ve adım için rota sayısını hesaplar."""
+        return onbelleksiz_sayac(gezegen, adim)
+
+    print("--- Görev 1: Önbelleksiz Rota Sayacı Ölçümü (adim=20) ---")
+    sonuc = rota_hesapla("dünya", 20)
+    print(f"Hesaplanan rota sayısı: {sonuc}")
