@@ -5,6 +5,11 @@
 
 # Saf fonksiyonlar ve uzay seyahati
 
+try:
+    from uzay_oyunu.dekoratorler import log_cagri
+except ModuleNotFoundError:
+    from dekoratorler import log_cagri
+
 
 def envanter_metni(credits: bool, engines: bool, copilot: bool) -> str:
     """Eşyaların durumuna göre envanter metnini döndürür."""
@@ -21,6 +26,7 @@ def envanter_metni(credits: bool, engines: bool, copilot: bool) -> str:
     return "Sende: " + ", ".join(esyalar)
 
 
+@log_cagri
 def hedef_menusu(hedefler: list) -> str:
     """Gidilebilecek hedefleri numaralandırarak menü olarak döndürür."""
     satirlar = ["Nereye gitmek istersin?"]

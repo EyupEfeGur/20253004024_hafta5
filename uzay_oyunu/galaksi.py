@@ -8,7 +8,13 @@
 import json
 import os
 
+try:
+    from uzay_oyunu.dekoratorler import log_cagri
+except ModuleNotFoundError:
+    from dekoratorler import log_cagri
 
+
+@log_cagri
 def galaksi_kur(gezegenler: list, baglantilar: dict, baslangic: str, **kwargs) -> dict:
     """Galaksi haritasını ve başlangıç durumunu kurar."""
     # Başlangıç gezegeni listede yoksa hata fırlatıyoruz

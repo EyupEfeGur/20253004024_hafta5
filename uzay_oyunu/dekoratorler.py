@@ -40,6 +40,24 @@ def say(fonksiyon):
     return sarmalayici
 
 
+def log_cagri(fonksiyon):
+    """Her çağrıdan önce fonksiyonu ve parametrelerini, sonra dönüş değerini yazdırır."""
+
+    @functools.wraps(fonksiyon)
+    def sarmalayici(*args, **kwargs):
+        # Konumsal ve varsa isimli argümanları formatlıyoruz
+        arg_parcalari = [repr(a) for a in args]
+        arg_parcalari.extend([f"{k}={v!r}" for k, v in kwargs.items()])
+        arg_metni = ", ".join(arg_parcalari)
+        print(f"-> {fonksiyon.__name__}({arg_metni})")
+
+        sonuc = fonksiyon(*args, **kwargs)
+        print(f"<- {fonksiyon.__name__} = {sonuc!r}")
+        return sonuc
+
+    return sarmalayici
+
+
 if __name__ == "__main__":
     # Hafta 4'teki önbelleksiz rota sayacına uygulayarak adim=20 için süreyi ölçüyoruz:
     try:

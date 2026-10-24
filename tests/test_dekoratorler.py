@@ -7,7 +7,7 @@
 
 import re
 import pytest
-from uzay_oyunu.dekoratorler import sure_olc, say
+from uzay_oyunu.dekoratorler import sure_olc, say, log_cagri
 from functools import lru_cache
 
 
@@ -146,3 +146,61 @@ def test_fibonacci_lru_ustte_say_altta():
     sonuc = fib(20)
     assert sonuc == 6765
     assert fib.__wrapped__.cagri == 21
+
+
+# ==============================================================================
+# Görev 3 Testleri: log_cagri
+# ==============================================================================
+
+
+def test_log_cagri_ornek_cikti(capsys):
+    """PDF'teki yolculuk('orion', hiz=3) çağrısının girdi ve çıktı formatını test ediyoruz."""
+
+    @log_cagri
+    def yolculuk(hedef: str, hiz: int = 1) -> str:
+        return f"{hedef} hiz={hiz}"
+
+    sonuc = yolculuk("orion", hiz=3)
+    assert sonuc == "orion hiz=3"
+
+    captured = capsys.readouterr()
+    satirlar = captured.out.strip().splitlines()
+    assert len(satirlar) == 2
+    assert satirlar[0] == "-> yolculuk('orion', hiz=3)"
+    assert satirlar[1] == "<- yolculuk = 'orion hiz=3'"
+
+
+def test_log_cagri_meta_korunumu():
+    """functools.wraps ile __name__ ve __doc__ niteliklerinin korunduğunu test ediyoruz."""
+
+    @log_cagri
+    def ornek_hesapla(x: int) -> int:
+        """Hesaplama fonksiyonu dokümantasyonu."""
+        return x * 10
+
+    assert ornek_hesapla.__name__ == "ornek_hesapla"
+    assert ornek_hesapla.__doc__ == "Hesaplama fonksiyonu dokümantasyonu."
+
+
+def test_log_cagri_hedef_menusu(capsys):
+    """hedef_menusu fonksiyonuna uygulanan log_cagri'nin çalıştığını test ediyoruz."""
+    from uzay_oyunu.oyun import hedef_menusu
+
+    menu = hedef_menusu(["mars", "jupiter"])
+    assert "Nereye gitmek istersin?" in menu
+
+    captured = capsys.readouterr()
+    assert "-> hedef_menusu(['mars', 'jupiter'])" in captured.out
+    assert "<- hedef_menusu =" in captured.out
+
+
+def test_log_cagri_galaksi_kur(capsys):
+    """galaksi_kur fonksiyonuna uygulanan log_cagri'nin çalıştığını test ediyoruz."""
+    from uzay_oyunu.galaksi import galaksi_kur
+
+    g = galaksi_kur(["dunya"], {"dunya": []}, "dunya", yakit=80)
+    assert g["yakit"] == 80
+
+    captured = capsys.readouterr()
+    assert "-> galaksi_kur(" in captured.out
+    assert "<- galaksi_kur =" in captured.out
