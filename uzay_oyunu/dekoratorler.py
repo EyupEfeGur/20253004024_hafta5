@@ -26,6 +26,20 @@ def sure_olc(fonksiyon):
     return sarmalayici
 
 
+def say(fonksiyon):
+    """Fonksiyonun çağrı sayısını 'cagri' niteliğinde sayar."""
+
+    @functools.wraps(fonksiyon)
+    def sarmalayici(*args, **kwargs):
+        # Fonksiyon her çağrıldığında sayacı 1 artırıyoruz
+        sarmalayici.cagri += 1
+        return fonksiyon(*args, **kwargs)
+
+    # Başlangıçta sayacı sıfırlıyoruz
+    sarmalayici.cagri = 0
+    return sarmalayici
+
+
 if __name__ == "__main__":
     # Hafta 4'teki önbelleksiz rota sayacına uygulayarak adim=20 için süreyi ölçüyoruz:
     try:

@@ -7,7 +7,8 @@
 
 import re
 import pytest
-from uzay_oyunu.dekoratorler import sure_olc
+from uzay_oyunu.dekoratorler import sure_olc, say
+from functools import lru_cache
 
 
 # ==============================================================================
@@ -70,3 +71,78 @@ def test_sure_olc_format(capsys):
     captured = capsys.readouterr()
     desen = r"^carp: \d+\.\d{4} sn\r?\n?$"
     assert re.search(desen, captured.out.strip()) is not None
+
+
+# ==============================================================================
+# Görev 2 Testleri: say ve dekoratör sırası
+# ==============================================================================
+
+
+def test_say_temel_sayac():
+    """Fonksiyon her çağrıldığında cagri niteliğinin 1 arttığını test ediyoruz."""
+
+    @say
+    def selam(ad: str) -> str:
+        return f"Merhaba {ad}"
+
+    assert selam.cagri == 0
+    selam("Ahmet")
+    assert selam.cagri == 1
+    selam("Mehmet")
+    assert selam.cagri == 2
+
+
+def test_say_meta_korunumu():
+    """functools.wraps ile __name__ ve __doc__ niteliklerinin korunduğunu test ediyoruz."""
+
+    @say
+    def test_fn():
+        """Test açıklaması."""
+        return 1
+
+    assert test_fn.__name__ == "test_fn"
+    assert test_fn.__doc__ == "Test açıklaması."
+
+
+def test_fibonacci_yalnizca_say():
+    """Yalnızca @say ile fib(20) çağrı sayısının 21891 olduğunu test ediyoruz."""
+
+    @say
+    def fib(n: int) -> int:
+        if n < 2:
+            return n
+        return fib(n - 1) + fib(n - 2)
+
+    sonuc = fib(20)
+    assert sonuc == 6765
+    assert fib.cagri == 21891
+
+
+def test_fibonacci_say_ustte_lru_altta():
+    """@say üstte, @lru_cache altta olduğunda çağrı sayısının 39 olduğunu test ediyoruz."""
+
+    @say
+    @lru_cache(maxsize=None)
+    def fib(n: int) -> int:
+        if n < 2:
+            return n
+        return fib(n - 1) + fib(n - 2)
+
+    sonuc = fib(20)
+    assert sonuc == 6765
+    assert fib.cagri == 39
+
+
+def test_fibonacci_lru_ustte_say_altta():
+    """@lru_cache üstte, @say altta olduğunda fib.__wrapped__.cagri değerinin 21 olduğunu test ediyoruz."""
+
+    @lru_cache(maxsize=None)
+    @say
+    def fib(n: int) -> int:
+        if n < 2:
+            return n
+        return fib(n - 1) + fib(n - 2)
+
+    sonuc = fib(20)
+    assert sonuc == 6765
+    assert fib.__wrapped__.cagri == 21
