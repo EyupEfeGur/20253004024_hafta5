@@ -1,4 +1,4 @@
-# İleri Python Programlama - Hafta 5 Lab Ödevi
+# Python İle Programlama - Hafta 5 Lab Ödevi
 
 **Ad :** Eyüp Efe  
 **Soyad :** GÜR  
