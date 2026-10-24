@@ -204,3 +204,111 @@ def test_log_cagri_galaksi_kur(capsys):
     captured = capsys.readouterr()
     assert "-> galaksi_kur(" in captured.out
     assert "<- galaksi_kur =" in captured.out
+
+
+# ==============================================================================
+# Görev 4 Testleri: Komut Sistemi ve Kayıt Deseni
+# ==============================================================================
+
+
+def test_komut_kayit_deseni():
+    """@komut dekoratörünün fonksiyonu değiştirmeden KOMUTLAR sözlüğüne kaydettiğini test ediyoruz."""
+    from uzay_oyunu.komutlar import KOMUTLAR, komut
+
+    @komut("test_radar", "etraftaki cisimleri tarar")
+    def radar(durum: dict):
+        return "Tarama tamamlandı"
+
+    assert "test_radar" in KOMUTLAR
+    kayitli_fonk, aciklama = KOMUTLAR["test_radar"]
+    assert aciklama == "etraftaki cisimleri tarar"
+    # Dekoratörün fonksiyonu değiştirmeden döndürdüğünü doğruluyoruz
+    assert kayitli_fonk is radar
+    assert radar({}) == "Tarama tamamlandı"
+
+
+def test_komut_ayni_ad_value_error():
+    """Aynı isimli bir komut ikinci kez tanımlandığında tanım anında ValueError fırlatıldığını test ediyoruz."""
+    from uzay_oyunu.komutlar import komut
+
+    with pytest.raises(ValueError, match="zaten kayıtlı"):
+        @komut("yardim", "tekrar eden komut")
+        def sahte_yardim(durum):
+            pass
+
+
+def test_komut_yardim():
+    """yardim komutunun tüm komutları alfabetik sırada listelediğini test ediyoruz."""
+    from uzay_oyunu.komutlar import yardim
+
+    cikti = yardim({})
+    satirlar = cikti.splitlines()
+
+    # En azından envanter, harita ve yardim listelenmeli
+    assert any("envanter" in s for s in satirlar)
+    assert any("harita" in s for s in satirlar)
+    assert any("yardim" in s for s in satirlar)
+
+    # Sıralamanın alfabetik olduğunu kontrol ediyoruz
+    komut_adlari = [s.split()[0] for s in satirlar]
+    assert komut_adlari == sorted(komut_adlari)
+
+
+def test_komut_envanter():
+    """envanter komutunun durum sözlüğündeki eşyaları doğru gösterdiğini test ediyoruz."""
+    from uzay_oyunu.komutlar import envanter
+
+    durum_dolu = {
+        "credits": True,
+        "engines": False,
+        "copilot": True,
+    }
+    assert envanter(durum_dolu) == "Sende: bol kredi, yetenekli bir pilot"
+
+    durum_bos = {
+        "credits": False,
+        "engines": False,
+        "copilot": False,
+    }
+    assert envanter(durum_bos) == "Envanteriniz boş."
+
+
+def test_komut_harita():
+    """harita komutunun mevcut konumdan gidilebilecek gezegenleri doğru döndürdüğünü test ediyoruz."""
+    from uzay_oyunu.komutlar import harita
+
+    durum = {
+        "konum": "centauri",
+        "baglantilar": {
+            "centauri": ["orion", "dünya", "kara_delik"],
+            "dünya": ["centauri"],
+        },
+    }
+    assert harita(durum) == "orion, dünya, kara_delik"
+
+    durum_izole = {
+        "konum": "kara_delik",
+        "baglantilar": {
+            "kara_delik": [],
+        },
+    }
+    assert harita(durum_izole) == "Gidilebilecek gezegen yok."
+
+
+def test_travel_komut_entegrasyonu(monkeypatch, capsys):
+    """travel() içinde komut girildiğinde çalıştırılıp menünün tekrar gösterildiğini test ediyoruz."""
+    from uzay_oyunu.oyun import travel
+
+    # Kullanıcı girdisi: önce 'yardim', sonra 'harita', sonra çıkış için 'q'
+    girdiler = iter(["yardim", "harita", "q"])
+    monkeypatch.setattr("builtins.input", lambda _: next(girdiler))
+
+    travel()
+
+    captured = capsys.readouterr()
+    assert "envanter eşyalarını gösterir" in captured.out
+    assert "harita gidebileceğin gezegenleri gösterir" in captured.out
+    assert "yardim komutları listeler" in captured.out
+    # 'harita' komutunun çıktısı olarak dünya bağlantıları (centauri, sirius) yazdırılmalı
+    assert "centauri, sirius" in captured.out
+    assert "Oyunu 0 hamlede bitirdin!" in captured.out
