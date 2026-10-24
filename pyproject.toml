@@ -1,7 +1,7 @@
 [project]
 name = "uzay-oyunu"
 version = "0.1.0"
-description = "Ileri Python Programlama - Hafta 4 Lab Odevi"
+description = "Ileri Python Programlama - Hafta 5 Lab Odevi"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []

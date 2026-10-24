@@ -90,6 +90,42 @@ def yakit_harca(miktar: int) -> int:
     return 100 - miktar
 
 
+def hafiza(maxsize=None):
+    """functools.lru_cache kullanmadan, closure içindeki sözlükle çalışan önbellek dekoratörü."""
+
+    def dekorator(fonksiyon):
+        # Closure içinde önbellek sözlüğünü tutuyoruz
+        onbellek = {}
+
+        @functools.wraps(fonksiyon)
+        def sarmalayici(*args, **kwargs):
+            anahtar = (args, tuple(sorted(kwargs.items())))
+
+            if anahtar in onbellek:
+                # LRU mantığı: erişilen elemanı sözlükten çıkarıp en sona ekliyoruz
+                sonuc = onbellek.pop(anahtar)
+                onbellek[anahtar] = sonuc
+                return sonuc
+
+            sonuc = fonksiyon(*args, **kwargs)
+
+            # Limit varsa ve dolduysa en eski kaydı siliyoruz
+            if maxsize is not None and maxsize > 0:
+                if len(onbellek) >= maxsize:
+                    en_eski = next(iter(onbellek))
+                    del onbellek[en_eski]
+                onbellek[anahtar] = sonuc
+            elif maxsize is None:
+                onbellek[anahtar] = sonuc
+
+            return sonuc
+
+        sarmalayici.onbellek = onbellek
+        return sarmalayici
+
+    return dekorator
+
+
 if __name__ == "__main__":
     # Hafta 4'teki önbelleksiz rota sayacına uygulayarak adim=20 için süreyi ölçüyoruz:
     try:

@@ -7,7 +7,7 @@
 
 import re
 import pytest
-from uzay_oyunu.dekoratorler import sure_olc, say, log_cagri, sinirla, yakit_harca
+from uzay_oyunu.dekoratorler import sure_olc, say, log_cagri, sinirla, yakit_harca, hafiza
 from functools import lru_cache
 
 
@@ -69,6 +69,7 @@ def test_sure_olc_format(capsys):
 
     carp(3, 4)
     captured = capsys.readouterr()
+    # "carp: 0.0000 sn" formatını denetleyen regex deseni
     desen = r"^carp: \d+\.\d{4} sn\r?\n?$"
     assert re.search(desen, captured.out.strip()) is not None
 
@@ -358,3 +359,69 @@ def test_sinirla_meta_korunumu():
     """sinirla dekoratörünün fonksiyon metaverilerini koruduğunu test ediyoruz."""
     assert yakit_harca.__name__ == "yakit_harca"
     assert "yakıt" in yakit_harca.__doc__
+
+
+# ==============================================================================
+# Bonus Testleri: hafiza (Closure Tabanlı LRU Önbellek)
+# ==============================================================================
+
+
+def test_hafiza_lru_cache_karsilastirma():
+    """hafiza dekoratörünün sonuçlarının functools.lru_cache ile birebir eşleştiğini test ediyoruz."""
+
+    @hafiza(maxsize=None)
+    def fib_hafiza(n: int) -> int:
+        if n < 2:
+            return n
+        return fib_hafiza(n - 1) + fib_hafiza(n - 2)
+
+    @lru_cache(maxsize=None)
+    def fib_lru(n: int) -> int:
+        if n < 2:
+            return n
+        return fib_lru(n - 1) + fib_lru(n - 2)
+
+    for i in range(25):
+        assert fib_hafiza(i) == fib_lru(i)
+
+
+def test_hafiza_maxsize_en_eski_silme():
+    """maxsize dolduğunda en eski girdinin (LRU) silindiğini test ediyoruz."""
+    cagrilar = []
+
+    @hafiza(maxsize=3)
+    def kare(x: int) -> int:
+        cagrilar.append(x)
+        return x * x
+
+    # 1, 2, 3 ekleniyor (önbellek doldu: [1, 2, 3])
+    assert kare(1) == 1
+    assert kare(2) == 4
+    assert kare(3) == 9
+    assert len(kare.onbellek) == 3
+
+    # 4 eklendiğinde en eski olan 1 silinmeli, geriye 2, 3, 4 kalmalı
+    assert kare(4) == 16
+    assert len(kare.onbellek) == 3
+
+    # 1 silinmiş olmalı, tekrar çağrıldığında fonksiyon yeniden hesaplanmalı
+    cagrilar.clear()
+    assert kare(1) == 1
+    assert 1 in cagrilar  # Yeniden hesaplandı
+
+    # 1 tekrar eklendiğinde en eski olan 2 silinmeli
+    cagrilar.clear()
+    assert kare(3) == 9
+    assert len(cagrilar) == 0  # 3 önbellekte vardı, tekrar hesaplanmadı
+
+
+def test_hafiza_meta_korunumu():
+    """hafiza dekoratörünün __name__ ve __doc__ niteliklerini koruduğunu test ediyoruz."""
+
+    @hafiza(maxsize=5)
+    def test_fn():
+        """Hafıza test docstring."""
+        return 42
+
+    assert test_fn.__name__ == "test_fn"
+    assert test_fn.__doc__ == "Hafıza test docstring."
