@@ -7,7 +7,7 @@
 
 import re
 import pytest
-from uzay_oyunu.dekoratorler import sure_olc, say, log_cagri
+from uzay_oyunu.dekoratorler import sure_olc, say, log_cagri, sinirla, yakit_harca
 from functools import lru_cache
 
 
@@ -312,3 +312,49 @@ def test_travel_komut_entegrasyonu(monkeypatch, capsys):
     # 'harita' komutunun çıktısı olarak dünya bağlantıları (centauri, sirius) yazdırılmalı
     assert "centauri, sirius" in captured.out
     assert "Oyunu 0 hamlede bitirdin!" in captured.out
+
+
+# ==============================================================================
+# Görev 5 Testleri: Argüman Alan Dekoratör (sinirla) ve yakit_harca
+# ==============================================================================
+
+
+def test_sinirla_aralik_ici():
+    """Sınır değerleri (0 ve 100) ile aralık içindeki değerlerin doğru çalıştığını test ediyoruz."""
+    assert yakit_harca(30) == 70
+    assert yakit_harca(0) == 100
+    assert yakit_harca(100) == 0
+
+
+def test_sinirla_aralik_disi_buyuk():
+    """Üst sınırın (100) üzerindeki değerlerde anlamlı ValueError fırlatıldığını test ediyoruz."""
+    with pytest.raises(ValueError) as excinfo:
+        yakit_harca(150)
+    assert str(excinfo.value) == "yakit_harca: 150 değeri 0-100 aralığında değil"
+
+    with pytest.raises(ValueError):
+        yakit_harca(101)
+
+
+def test_sinirla_aralik_disi_kucuk():
+    """Alt sınırın (0) altındaki negatif değerlerde anlamlı ValueError fırlatıldığını test ediyoruz."""
+    with pytest.raises(ValueError) as excinfo:
+        yakit_harca(-10)
+    assert str(excinfo.value) == "yakit_harca: -10 değeri 0-100 aralığında değil"
+
+    with pytest.raises(ValueError):
+        yakit_harca(-1)
+
+
+def test_sinirla_adli_arguman():
+    """Adlı argümanla (kwargs) çağrıldığında da sınır denetiminin çalıştığını test ediyoruz."""
+    assert yakit_harca(miktar=40) == 60
+
+    with pytest.raises(ValueError):
+        yakit_harca(miktar=200)
+
+
+def test_sinirla_meta_korunumu():
+    """sinirla dekoratörünün fonksiyon metaverilerini koruduğunu test ediyoruz."""
+    assert yakit_harca.__name__ == "yakit_harca"
+    assert "yakıt" in yakit_harca.__doc__

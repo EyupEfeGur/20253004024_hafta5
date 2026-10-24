@@ -58,6 +58,38 @@ def log_cagri(fonksiyon):
     return sarmalayici
 
 
+def sinirla(alt: int | float, ust: int | float):
+    """Fonksiyonun ilk argümanının [alt, ust] aralığında olmasını kontrol eder."""
+
+    def dekorator(fonksiyon):
+        @functools.wraps(fonksiyon)
+        def sarmalayici(*args, **kwargs):
+            deger = None
+            if args:
+                deger = args[0]
+            elif kwargs:
+                deger = next(iter(kwargs.values()))
+
+            # Değer aralık dışındaysa ValueError fırlatıyoruz
+            if deger is not None:
+                if deger < alt or deger > ust:
+                    raise ValueError(
+                        f"{fonksiyon.__name__}: {deger} değeri {alt}-{ust} aralığında değil"
+                    )
+
+            return fonksiyon(*args, **kwargs)
+
+        return sarmalayici
+
+    return dekorator
+
+
+@sinirla(0, 100)
+def yakit_harca(miktar: int) -> int:
+    """Belirtilen miktar kadar yakıt harcar ve kalan yakıtı (100 - miktar) döndürür."""
+    return 100 - miktar
+
+
 if __name__ == "__main__":
     # Hafta 4'teki önbelleksiz rota sayacına uygulayarak adim=20 için süreyi ölçüyoruz:
     try:
